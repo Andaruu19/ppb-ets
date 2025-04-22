@@ -213,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Book Library'),
+        title: const Text('StoryBase'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -238,8 +238,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildSectionTitle('Buku (${_books.length})'),
                   _buildBookList(),
                   const SizedBox(height: 20),
-                  _buildSectionTitle('Penulis (${_authors.length})'),
-                  _buildAuthorList(),
+                  // _buildSectionTitle('Penulis (${_authors.length})'),
+                  // _buildAuthorList(),
                 ],
               ),
             ),
