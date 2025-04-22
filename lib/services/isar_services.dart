@@ -1,6 +1,6 @@
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import '../models/genre.dart';
+import '../models/author.dart';
 import '../models/book.dart';
 import 'dart:async'; // Untuk Completer
 
@@ -17,7 +17,7 @@ class IsarService {
     if (Isar.instanceNames.isEmpty) {
       // Hanya buka jika belum ada instance
       return await Isar.open(
-        [BookSchema, GenreSchema], // Sertakan SEMUA skema di sini
+        [BookSchema, AuthorSchema], // Sertakan SEMUA skema di sini
         directory: dir.path,
         inspector: true, // Aktifkan inspector untuk debugging (opsional)
         name: 'libraryDb', // Nama database (opsional)
@@ -30,19 +30,19 @@ class IsarService {
   // --- Contoh Operasi CRUD dan Relasi ---
 
   // Tambah Genre Awal (jika belum ada)
-  Future<void> addInitialGenres() async {
+  Future<void> addInitialAuthors() async {
     final isar = await db;
     // Cek apakah genre sudah ada
-    final count = await isar.genres.count();
+    final count = await isar.authors.count();
     if (count == 0) {
       print("Menambahkan genre awal...");
-      final fantasy = Genre(name: 'Fantasy');
-      final sciFi = Genre(name: 'Science Fiction');
-      final adventure = Genre(name: 'Adventure');
-      final mystery = Genre(name: 'Mystery');
+      final farel = Author(name: 'Farel', hometown: 'Malang');
+      final arya = Author(name: 'Arya', hometown: 'Blitar');
+      final wendy = Author(name: 'Wendy', hometown: 'Banyuwangi');
+      final ipan = Author(name: 'Ipan', hometown: 'Kediri');
 
       await isar.writeTxn(() async {
-        await isar.genres.putAll([fantasy, sciFi, adventure, mystery]);
+        await isar.authors.putAll([farel, arya, wendy, ipan]);
       });
       print("Genre awal ditambahkan.");
     } else {
@@ -51,17 +51,17 @@ class IsarService {
   }
 
   // Tambah Buku Baru dengan Relasi Genre
-  Future<void> addBookWithGenres(Book newBook, List<String> genreNames) async {
+  Future<void> addBookWithAuthors(Book newBook, List<String> authorNames) async {
     final isar = await db;
 
     // 1. Cari objek Genre berdasarkan nama
-    List<Genre> genresToLink = [];
-    for (String name in genreNames) {
-      final genre = await isar.genres.filter().nameEqualTo(name).findFirst();
+    List<Author> genresToLink = [];
+    for (String name in authorNames) {
+      final genre = await isar.authors.filter().nameEqualTo(name).findFirst();
       if (genre != null) {
         genresToLink.add(genre);
       } else {
-        print("Peringatan: Genre '$name' tidak ditemukan.");
+        print("Peringatan: Author '$name' tidak ditemukan.");
         // Opsional: Buat genre baru jika tidak ditemukan
         // final newGenre = Genre(name: name);
         // await isar.writeTxn(() async {
@@ -79,34 +79,33 @@ class IsarService {
 
       // Tambahkan link ke genre
       if (genresToLink.isNotEmpty) {
-        newBook.genres.addAll(genresToLink);
+        newBook.authors.addAll(genresToLink);
         // Simpan perubahan pada link
-        await newBook.genres.save();
+        await newBook.authors.save();
         print('Genre ditautkan ke buku "${newBook.title}".');
       }
     });
   }
 
   // Ambil semua buku (dengan genre yang sudah dimuat)
-  Future<List<Book>> getAllBooksWithGenres() async {
+  Future<List<Book>> getAllBooksWithAuthors() async {
     final isar = await db;
     final books = await isar.books.where().findAll();
     // Muat relasi genre untuk setiap buku
     for (var book in books) {
-      await book.genres.load();
+      await book.authors.load();
     }
     return books;
   }
 
-  // Ambil semua genre (dengan buku yang sudah dimuat)
-  Future<List<Genre>> getAllGenresWithBooks() async {
+  Future<List<Author>> getAllAuthorsWithBooks() async {
       final isar = await db;
-      final genres = await isar.genres.where().findAll();
+      final authors = await isar.authors.where().findAll();
       // Muat relasi buku untuk setiap genre
-      for (var genre in genres) {
-          await genre.books.load();
+      for (var author in authors) {
+          await author.books.load();
       }
-      return genres;
+      return authors;
   }
 
   // Contoh: Tambahkan buku contoh
@@ -114,24 +113,20 @@ class IsarService {
     final isar = await db;
     final bookCount = await isar.books.count();
     if (bookCount == 0) {
-        print("Menambahkan buku contoh...");
         final book1 = Book(
             title: 'The Lord of the Rings',
-            author: 'J.R.R. Tolkien',
             publicationYear: 1954);
-        await addBookWithGenres(book1, ['Fantasy', 'Adventure']);
+        await addBookWithAuthors(book1, ['Farel', 'Wendy']);
 
         final book2 = Book(
             title: 'Dune',
-            author: 'Frank Herbert',
             publicationYear: 1965);
-        await addBookWithGenres(book2, ['Science Fiction']);
+        await addBookWithAuthors(book2, ['Farel', 'Arya']);
 
          final book3 = Book(
             title: 'The Da Vinci Code',
-            author: 'Dan Brown',
             publicationYear: 2003);
-        await addBookWithGenres(book3, ['Mystery', 'Adventure']);
+        await addBookWithAuthors(book3, ['Farel', 'Ipan']);
          print("Buku contoh ditambahkan.");
     } else {
          print("Buku contoh sudah ada.");
@@ -145,5 +140,45 @@ class IsarService {
       await isar.clear();
     });
     print("Database dibersihkan.");
+  }
+
+  // Update an existing book
+  Future<void> updateBook(Book book, List<String> authorNames) async {
+    final isar = await db;
+    
+    // Find authors to link
+    List<Author> authorsToLink = [];
+    for (String name in authorNames) {
+      final author = await isar.authors.filter().nameEqualTo(name).findFirst();
+      if (author != null) {
+        authorsToLink.add(author);
+      } else {
+        print("Warning: Author '$name' not found");
+      }
+    }
+    
+    await isar.writeTxn(() async {
+      // Save book first
+      await isar.books.put(book);
+      
+      // Clear existing links and add new ones
+      await book.authors.reset();
+      book.authors.addAll(authorsToLink);
+      await book.authors.save();
+    });
+    print('Book "${book.title}" updated with ID: ${book.id}');
+  }
+  
+  // Delete book by ID
+  Future<void> deleteBook(int bookId) async {
+    final isar = await db;
+    await isar.writeTxn(() async {
+      final success = await isar.books.delete(bookId);
+      if (success) {
+        print('Book with ID $bookId deleted successfully');
+      } else {
+        print('Failed to delete book with ID $bookId');
+      }
+    });
   }
 }

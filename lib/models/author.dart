@@ -1,19 +1,20 @@
 import 'package:isar/isar.dart';
 import 'book.dart'; // Import model Book untuk Backlink
 
-part 'genre.g.dart'; // Shared generated part file
+part 'author.g.dart'; // Shared generated part file
 
 @collection
-class Genre {
+class Author {
   Id id = Isar.autoIncrement;
 
   @Index(unique: true, caseSensitive: false)
   String? name;
+  String? hometown;
 
   // Backlink ke field 'genres' di model 'Book'
-  @Backlink(to: 'genres')
+  @Backlink(to: 'authors')
   final books = IsarLinks<Book>();
 
-  Genre({this.name}); // Constructor opsional
+  Author({this.name, this.hometown}); // Constructor opsional
 }
 

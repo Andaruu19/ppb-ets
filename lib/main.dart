@@ -17,7 +17,7 @@ void main() async {
   // 4. (Opsional) Tambahkan data awal jika database baru dibuat
   //    Tunggu DB benar-benar terbuka sebelum menambahkan data
   await isarService.db; // Pastikan DB sudah siap
-  await isarService.addInitialGenres(); // Tambah genre jika belum ada
+  await isarService.addInitialAuthors(); // Tambah genre jika belum ada
   await isarService.addSampleBooks();  // Tambah buku contoh jika belum ada
 
 

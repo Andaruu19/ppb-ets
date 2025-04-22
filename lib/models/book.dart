@@ -1,5 +1,5 @@
 import 'package:isar/isar.dart';
-import 'genre.dart'; // Import model Genre untuk IsarLinks
+import 'author.dart'; // Import model Genre untuk IsarLinks
 
 part 'book.g.dart'; // Shared generated part file
 
@@ -9,13 +9,12 @@ class Book {
 
   @Index()
   String? title;
-
-  String? author;
   String? synopsis;
   int? publicationYear;
 
   // Link ke banyak objek Genre
-  final genres = IsarLinks<Genre>();
+  final authors = IsarLinks<Author>();
+  
 
-  Book({this.title, this.author, this.synopsis, this.publicationYear}); // Constructor opsional
+  Book({this.title, this.synopsis, this.publicationYear}); // Constructor opsional
 }
